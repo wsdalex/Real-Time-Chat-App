@@ -1,35 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
 
+const SOCKET_SERVER_URL = "http://localhost:3000";
 function App() {
-  const [count, setCount] = useState(0)
+  const [messages, setMessages] = useState(["Test message"]);
+  const [message, setMessage] = useState("");
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = io(SOCKET_SERVER_URL);
+    setSocket(newSocket);
+
+    newSocket.on("chat-message", (message) => {
+      setMessages([...messages, message]);
+    });
+
+    return () => newSocket.disconnect();
+  }, []);
+
+  const sendMessage = () => {
+    if (socket) {
+      socket.emit("chat-message", message);
+      setMessage("");
+      console.log(messages);
+    }
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Container>
+        <h1>Will's Chat App</h1>
+        <Row className="d-flex justify-content-center">
+          <Col className="text-center">
+            <h2>Messages:</h2>
+            <div>
+              {messages.map((msg, index) => {
+                return <h3 key={index}>{msg}</h3>;
+              })}
+            </div>
+          </Col>
+        </Row>
+
+        <Row className="d-flex justify-content-center">
+          <Form>
+            <Form.Label>New Message:</Form.Label>
+            <Form.Control
+              type="textarea"
+              onChange={(e) => setMessage(e.target.value)}
+              value={message}
+            ></Form.Control>
+            <Button onClick={sendMessage}>Send Message</Button>
+          </Form>
+        </Row>
+      </Container>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

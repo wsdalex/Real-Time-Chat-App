@@ -1,11 +1,31 @@
-const expres = require("express");
-const http = require("node:http");
-const { Server } = require("socket.io");
+import { Server, Socket } from "socket.io";
+import http from "http";
+import express from "express";
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const PORT = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-  res.send("<h1>Hellow World!</h1>");
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on("chat-message", (message) => {
+    console.log(`Message received from ${socket.id}: ${message}`);
+    socket.broadcast.emit("chat-message", message);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
